@@ -9,8 +9,8 @@ enum qoi_channels_t {
 };
 
 enum qoi_colorspace_t {
-	SRGB_LINEAR_ALPHA = 0,
-	LINEAR = 1,
+	QOI_SRGB = 0,
+	QOI_LINEAR = 1,
 };
 
 typedef struct {
