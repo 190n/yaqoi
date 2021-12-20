@@ -5,12 +5,7 @@ typedef struct {
 	uint64_t total_pixels;
 	uint64_t total_bits;
 	struct {
-		uint64_t rgb;
-		uint64_t rgba;
-		uint64_t index;
-		uint64_t diff;
-		uint64_t luma;
-		uint64_t run;
+		uint64_t rgb, rgba, index, diff, luma, run;
 	} op_to_pixels;
 } qoi_stats_t;
 
