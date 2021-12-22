@@ -48,3 +48,16 @@ void encoder_write_header(Encoder *e) {
 		fwrite(&h, sizeof(qoi_header_t), 1, e->output);
 	}
 }
+
+//
+// Free an Encoder and set the passed pointer to NULL.
+//
+// e: double pointer to the QOI encoder
+//
+void encoder_delete(Encoder **e) {
+	if (e && *e) {
+		fclose((*e)->output);
+		free(*e);
+		*e = NULL;
+	}
+}
