@@ -28,4 +28,6 @@ typedef struct {
 	qoi_colorspace_t colorspace;
 } qoi_header_t;
 
+#define QOI_MAGIC (('q' << 24) | ('o' << 16) | ('i' << 8) | ('f' << 0))
+
 #endif
