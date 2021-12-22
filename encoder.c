@@ -26,6 +26,10 @@ Encoder *encoder_create(const char *output, bool track_stats, qoi_desc_t *desc) 
 	Encoder *e = (Encoder *) calloc(1, sizeof(Encoder));
 	if (e) {
 		e->output = fopen(output, "wb");
+		if (!e->output) {
+			free(e);
+			return NULL;
+		}
 		e->track_stats = track_stats;
 		e->desc = *desc;
 	}
