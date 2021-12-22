@@ -1,5 +1,6 @@
 #include "encoder.h"
 
+#include "bits.h"
 #include "pixel.h"
 
 #include <stdlib.h>
@@ -40,9 +41,9 @@ Encoder *encoder_create(const char *output, bool track_stats, qoi_desc_t *desc) 
 void encoder_write_header(Encoder *e) {
 	if (e) {
 		qoi_header_t h;
-		memcpy(h.magic, "qoif", 4);
-		h.width = e->desc.width;
-		h.height = e->desc.height;
+		store_u32be(h.magic, QOI_MAGIC);
+		store_u32be((char *) &h.width, e->desc.width);
+		store_u32be((char *) &h.height, e->desc.height);
 		h.channels = e->desc.channels;
 		h.colorspace = e->desc.colorspace;
 		fwrite(&h, sizeof(qoi_header_t), 1, e->output);
