@@ -16,16 +16,17 @@ struct Encoder {
 //
 // Create a new QOI encoder.
 //
-// output:      output file
+// output:      output filename
 // track_stats: whether to track statistics during encoding
 // desc:        information about the file to encode
 //
-Encoder *encoder_create(FILE *output, bool track_stats, qoi_desc_t desc) {
+Encoder *encoder_create(const char *output, bool track_stats, qoi_desc_t *desc) {
+	// use calloc for zero initialization
 	Encoder *e = (Encoder *) calloc(1, sizeof(Encoder));
 	if (e) {
-		e->output = output;
+		e->output = fopen(output, "wb");
 		e->track_stats = track_stats;
-		e->desc = desc;
+		e->desc = *desc;
 	}
 
 	return e;
