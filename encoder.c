@@ -1,9 +1,9 @@
 #include "encoder.h"
 
+#include "pixel.h"
+
 #include <stdlib.h>
 #include <string.h>
-
-#include "pixel.h"
 
 struct Encoder {
 	FILE *output;

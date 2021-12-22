@@ -1,8 +1,8 @@
 #ifndef __ENCODER_H__
 #define __ENCODER_H__
 
-#include "qoi.h"
 #include "pixel.h"
+#include "qoi.h"
 #include "stats.h"
 
 #include <stdbool.h>

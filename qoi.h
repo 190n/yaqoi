@@ -28,5 +28,4 @@ typedef struct {
 	qoi_colorspace_t colorspace;
 } qoi_header_t;
 
-
 #endif
