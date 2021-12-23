@@ -3,3 +3,5 @@ deqoi
 *.o
 .vscode
 qoi
+*.png
+*.qoi
