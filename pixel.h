@@ -1,10 +1,14 @@
 #ifndef __PIXEL_H__
 #define __PIXEL_H__
 
+#include <stdbool.h>
 #include <stdint.h>
 
-typedef struct {
-	uint8_t r, g, b, a;
+typedef union {
+	struct {
+		uint8_t r, g, b, a;
+	} channels;
+	uint32_t rgba;
 } pixel_t;
 
 //
@@ -13,7 +17,17 @@ typedef struct {
 // p: the pixel to hash
 //
 static inline uint8_t pixel_hash(pixel_t p) {
-	return (p.r * 3 + p.g * 5 + p.b * 7 + p.a * 11) % 64;
+	return (p.channels.r * 3 + p.channels.g * 5 + p.channels.b * 7 + p.channels.a * 11) % 64;
+}
+
+//
+// Determine if two pixels are equal.
+//
+// a: the first pixel
+// b: the second pixel
+//
+static inline bool pixel_equal(pixel_t a, pixel_t b) {
+	return a.rgba == b.rgba;
 }
 
 #endif
