@@ -3,15 +3,16 @@
 
 #include <stdint.h>
 
-typedef enum {
-	RGB = 3,
-	RGBA = 4,
-} qoi_channels_t;
+// "qoif"
+#define QOI_MAGIC (('q' << 24) | ('o' << 16) | ('i' << 8) | ('f' << 0))
 
-typedef enum {
-	QOI_SRGB = 0,
-	QOI_LINEAR = 1,
-} qoi_colorspace_t;
+#define RGB 3
+#define RGBA 4
+#define QOI_SRGB 0
+#define QOI_LINEAR 1
+
+typedef uint8_t qoi_channels_t;
+typedef uint8_t qoi_colorspace_t;
 
 typedef struct {
 	uint32_t width;
@@ -28,6 +29,6 @@ typedef struct {
 	qoi_colorspace_t colorspace;
 } qoi_header_t;
 
-#define QOI_MAGIC (('q' << 24) | ('o' << 16) | ('i' << 8) | ('f' << 0))
+#define QOI_HEADER_LENGTH 14
 
 #endif
