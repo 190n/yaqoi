@@ -2,10 +2,10 @@ CC = clang
 CFLAGS = -Wall -Wextra -Werror -Wpedantic -O2 -g
 LFLAGS =
 ENQOI_OBJS = enqoi.o encoder.o
-DEQOI_OBJS = deqoi.o decoder.o
+DEQOI_OBJS = deqoi.o
 RM = rm -f
 
-all: enqoi# deqoi
+all: enqoi deqoi
 
 enqoi: $(ENQOI_OBJS)
 	$(CC) $(LFLAGS) $(ENQOI_OBJS) -o enqoi
