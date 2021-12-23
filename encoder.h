@@ -10,7 +10,7 @@
 
 typedef struct Encoder Encoder;
 
-Encoder *encoder_create(bool track_stats, qoi_desc_t *desc);
+Encoder *encoder_create(qoi_desc_t *desc);
 
 void encoder_write_header(FILE *dest, Encoder *e);
 

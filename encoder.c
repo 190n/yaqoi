@@ -7,7 +7,6 @@
 #include <string.h>
 
 struct Encoder {
-	bool track_stats;
 	qoi_stats_t stats;
 	qoi_desc_t desc;
 	pixel_t seen_pixels[64];
@@ -24,11 +23,10 @@ struct Encoder {
 // track_stats: whether to track statistics during encoding
 // desc:        information about the file to encode
 //
-Encoder *encoder_create(bool track_stats, qoi_desc_t *desc) {
+Encoder *encoder_create(qoi_desc_t *desc) {
 	// use calloc for zero initialization
 	Encoder *e = (Encoder *) calloc(1, sizeof(Encoder));
 	if (e) {
-		e->track_stats = track_stats;
 		e->desc = *desc;
 	}
 
