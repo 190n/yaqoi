@@ -15,6 +15,7 @@ struct Encoder {
 	uint8_t run_length;
 	bool header_written;
 	uint64_t pixels_written;
+	bool end_marker_written;
 };
 
 //
@@ -37,7 +38,8 @@ Encoder *encoder_create(bool track_stats, qoi_desc_t *desc) {
 //
 // Write the header of a QOI file.
 //
-// e: QOI encoder to use
+// dest: file to write the header to
+// e:    QOI encoder to use
 //
 void encoder_write_header(FILE *dest, Encoder *e) {
 	if (e) {
