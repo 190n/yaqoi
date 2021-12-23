@@ -49,8 +49,8 @@ void encoder_write_header(FILE *dest, Encoder *e) {
 		e->header_written = true;
 		qoi_header_t h;
 		store_u32be(h.magic, QOI_MAGIC);
-		store_u32be((char *) &h.width, e->desc.width);
-		store_u32be((char *) &h.height, e->desc.height);
+		store_u32be((uint8_t *) &h.width, e->desc.width);
+		store_u32be((uint8_t *) &h.height, e->desc.height);
 		h.channels = e->desc.channels;
 		h.colorspace = e->desc.colorspace;
 		fwrite(&h, QOI_HEADER_LENGTH, 1, dest);

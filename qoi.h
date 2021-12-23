@@ -22,7 +22,7 @@ typedef struct {
 } qoi_desc_t;
 
 typedef struct {
-	char magic[4];
+	uint8_t magic[4];
 	uint32_t width;
 	uint32_t height;
 	qoi_channels_t channels;
