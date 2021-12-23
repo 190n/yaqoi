@@ -11,6 +11,10 @@ typedef union {
 	uint32_t rgba;
 } pixel_t;
 
+typedef struct {
+	int16_t r, g, b, a;
+} pixel_difference_t;
+
 //
 // Compute the hash of a pixel, to determine its index in the array of seen pixels.
 //
@@ -28,6 +32,21 @@ static inline uint8_t pixel_hash(pixel_t p) {
 //
 static inline bool pixel_equal(pixel_t a, pixel_t b) {
 	return a.rgba == b.rgba;
+}
+
+//
+// Compute the difference between two pixels (a - b).
+//
+// a: the first pixel
+// b: the second pixel
+//
+static inline pixel_difference_t pixel_subtract(pixel_t a, pixel_t b) {
+	return (pixel_difference_t) {
+		.r = a.channels.r - b.channels.r,
+		.g = a.channels.g - b.channels.g,
+		.b = a.channels.b - b.channels.b,
+		.a = a.channels.a - b.channels.a,
+	};
 }
 
 #endif
