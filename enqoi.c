@@ -2,10 +2,10 @@
 
 int main(void) {
 	Encoder *e = encoder_create(false, &(qoi_desc_t) {
-		.width = 1024,
-		.height = 2048,
+		.width = 0x01234567,
+		.height = 0xabcdef01,
 		.channels = RGB,
-		.colorspace = QOI_SRGB,
+		.colorspace = QOI_LINEAR,
 	});
 	encoder_write_header(stdout, e);
 	encoder_delete(&e);
