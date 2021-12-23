@@ -31,4 +31,11 @@ typedef struct {
 
 #define QOI_HEADER_LENGTH 14
 
+#define QOI_OP_RGB   0xfe // 0b1111 1110
+#define QOI_OP_RGBA  0xff // 0b1111 1111
+#define QOI_OP_INDEX 0x00 // 0b00
+#define QOI_OP_DIFF  0x40 // 0b01
+#define QOI_OP_LUMA  0x80 // 0b10
+#define QOI_OP_RUN   0xc0 // 0b11
+
 #endif
