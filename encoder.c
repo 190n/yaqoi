@@ -84,7 +84,7 @@ void write_index(FILE *dest, Encoder *e, uint8_t index) {
 	chunk |= index;
 	fputc(chunk, dest);
 	e->stats.total_bits += 8;
-	e->stats.op_to_pixels.index++;
+	e->stats.op_to_pixels.index += 1;
 }
 
 //
@@ -93,9 +93,26 @@ void write_index(FILE *dest, Encoder *e, uint8_t index) {
 //
 // diff: pixel difference to examine
 //
-bool op_diff_compatible(pixel_difference_t diff) {
-	return (-2 <= diff.r && diff.r <= 1) && (-2 <= diff.g && diff.g <= 1)
-	       && (-2 <= diff.b && diff.b <= 1) && (diff.a == 0);
+bool op_diff_compatible(pixel_difference_t *diff) {
+	return (-2 <= diff->r && diff->r <= 1) && (-2 <= diff->g && diff->g <= 1)
+	       && (-2 <= diff->b && diff->b <= 1) && (diff->a == 0);
+}
+
+//
+// Write a QOI_OP_DIFF chunk to a file and update the encoder's statistics.
+//
+// dest: file to write to
+// e:    QOI encoder to use
+// diff: pixel difference to write
+//
+void write_diff(FILE *dest, Encoder *e, pixel_difference_t *diff) {
+	uint8_t chunk = QOI_OP_DIFF, dr = diff->r + 2, dg = diff->g + 2, db = diff->b + 2;
+	chunk |= (dr << 4);
+	chunk |= (dg << 2);
+	chunk |= (db << 0);
+	fputc(chunk, dest);
+	e->stats.total_bits += 8;
+	e->stats.op_to_pixels.diff += 1;
 }
 
 //
@@ -106,10 +123,27 @@ bool op_diff_compatible(pixel_difference_t diff) {
 //
 // diff: pixel difference to examine
 //
-bool op_luma_compatible(pixel_difference_t diff) {
-	int16_t dr_dg = diff.r - diff.g, db_dg = diff.b - diff.g;
-	return (-32 <= diff.g && diff.g <= 31) && (-8 <= dr_dg && dr_dg <= 7)
-	       && (-8 <= db_dg && db_dg <= 7) && (diff.a == 0);
+bool op_luma_compatible(pixel_difference_t *diff) {
+	int16_t dr_dg = diff->r - diff->g, db_dg = diff->b - diff->g;
+	return (-32 <= diff->g && diff->g <= 31) && (-8 <= dr_dg && dr_dg <= 7)
+	       && (-8 <= db_dg && db_dg <= 7) && (diff->a == 0);
+}
+
+//
+// Write a QOI_OP_LUMA chunk to a file and update the encoder's statistics.
+//
+// dest: file to write to
+// e:    QOI encoder to use
+// diff: pixel difference to write
+//
+void write_luma(FILE *dest, Encoder *e, pixel_difference_t *diff) {
+	uint8_t chunk[2];
+	uint8_t dg = diff->g + 32, dr_dg = diff->r - dg + 8, db_dg = diff->b - dg + 8;
+	chunk[0] = QOI_OP_LUMA | dg;
+	chunk[1] = (dr_dg << 4) | (db_dg << 0);
+	fwrite(chunk, 1, 2, dest);
+	e->stats.total_bits += 16;
+	e->stats.op_to_pixels.luma += 1;
 }
 
 //
@@ -128,6 +162,7 @@ void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n) 
 	for (uint64_t i = 0; i < n; i++) {
 		pixel_t p = pixels[i];
 		if (pixel_equal(p, e->last_pixel)) {
+			// this pixel is the same as the last one, so encode a run
 			e->run_length++;
 			if (e->run_length == 62) {
 				// longest that a run can be
@@ -146,11 +181,26 @@ void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n) 
 		if (pixel_equal(p, e->seen_pixels[hash])) {
 			// pixel is in our table, so use the index
 			write_index(dest, e, hash);
+			// remember this pixel
+			e->last_pixel = p;
 			// handled
 			continue;
 		} else {
 			// store pixel in table
 			e->seen_pixels[hash] = p;
+		}
+
+		pixel_difference_t diff = pixel_subtract(p, e->last_pixel);
+		if (op_diff_compatible(&diff)) {
+			// QOI_OP_DIFF
+			write_diff(dest, e, &diff);
+			// handled
+			continue;
+		} else if (op_luma_compatible(&diff)) {
+			// QOI_OP_LUMA
+			write_luma(dest, e, &diff);
+			// handled
+			continue;
 		}
 	}
 }
