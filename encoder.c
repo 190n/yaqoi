@@ -88,6 +88,31 @@ void write_index(FILE *dest, Encoder *e, uint8_t index) {
 }
 
 //
+// Determine if the difference between two pixels is suitable for a QOI_OP_DIFF chunk (RGB
+// difference is in [-2, 1] for each channel, and alpha channels are equal).
+//
+// diff: pixel difference to examine
+//
+bool op_diff_compatible(pixel_difference_t diff) {
+	return (-2 <= diff.r && diff.r <= 1) && (-2 <= diff.g && diff.g <= 1)
+	       && (-2 <= diff.b && diff.b <= 1) && (diff.a == 0);
+}
+
+//
+// Determine if the difference between two pixels is suitable for a QOI_OP_LUMA chunk:
+//  - green channel difference is in [-32, 31]
+//  - red and blue differences minus the green channel difference are in [-8, 7]
+//  - alpha channels are equal
+//
+// diff: pixel difference to examine
+//
+bool op_luma_compatible(pixel_difference_t diff) {
+	int16_t dr_dg = diff.r - diff.g, db_dg = diff.b - diff.g;
+	return (-32 <= diff.g && diff.g <= 31) && (-8 <= dr_dg && dr_dg <= 7)
+	       && (-8 <= db_dg && db_dg <= 7) && (diff.a == 0);
+}
+
+//
 // Encode some pixels using QOI.
 //
 // dest:   file to write encoded data to
