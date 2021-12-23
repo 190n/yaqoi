@@ -5,7 +5,7 @@ ENQOI_OBJS = enqoi.o encoder.o
 DEQOI_OBJS = deqoi.o decoder.o
 RM = rm -f
 
-all: enqoi deqoi
+all: enqoi# deqoi
 
 enqoi: $(ENQOI_OBJS)
 	$(CC) $(LFLAGS) $(ENQOI_OBJS) -o enqoi
