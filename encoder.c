@@ -56,6 +56,13 @@ void encoder_write_header(FILE *dest, Encoder *e) {
 	}
 }
 
+//
+// Write a QOI_OP_RUN chunk representing an encoder's current run to a file, update statistics, and
+// end the run in the encoder's state.
+//
+// dest: file to write to
+// e:    QOI encoder to use
+//
 void write_run(FILE *dest, Encoder *e) {
 	uint8_t chunk = QOI_OP_RUN;
 	chunk |= (e->run_length - 1);
@@ -65,6 +72,13 @@ void write_run(FILE *dest, Encoder *e) {
 	e->run_length = 0;
 }
 
+//
+// Write a QOI_OP_INDEX chunk to a file and update the encoder's statistics.
+//
+// dest:  file to write to
+// e:     QOI encoder to use
+// index: index to write
+//
 void write_index(FILE *dest, Encoder *e, uint8_t index) {
 	uint8_t chunk = QOI_OP_INDEX;
 	chunk |= index;
