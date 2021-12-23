@@ -6,9 +6,9 @@
 // "qoif"
 #define QOI_MAGIC (('q' << 24) | ('o' << 16) | ('i' << 8) | ('f' << 0))
 
-#define RGB 3
-#define RGBA 4
-#define QOI_SRGB 0
+#define RGB        3
+#define RGBA       4
+#define QOI_SRGB   0
 #define QOI_LINEAR 1
 
 typedef uint8_t qoi_channels_t;
