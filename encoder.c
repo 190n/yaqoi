@@ -147,6 +147,43 @@ void write_luma(FILE *dest, Encoder *e, pixel_difference_t *diff) {
 }
 
 //
+// Write a QOI_OP_RGBA chunk to a file and update the encoder's statistics.
+//
+// dest: file to write to
+// e:    QOI encoder to use
+// p:    pixel to write
+//
+void write_rgba(FILE *dest, Encoder *e, pixel_t *p) {
+	uint8_t chunk[5];
+	chunk[0] = QOI_OP_RGBA;
+	chunk[1] = p->channels.r;
+	chunk[2] = p->channels.g;
+	chunk[3] = p->channels.b;
+	chunk[4] = p->channels.a;
+	fwrite(chunk, 1, 5, dest);
+	e->stats.total_bits += 40;
+	e->stats.op_to_pixels.rgba += 1;
+}
+
+//
+// Write a QOI_OP_RGB chunk to a file and update the encoder's statistics.
+//
+// dest: file to write to
+// e:    QOI encoder to use
+// p:    pixel to write
+//
+void write_rgba(FILE *dest, Encoder *e, pixel_t *p) {
+	uint8_t chunk[4];
+	chunk[0] = QOI_OP_RGB;
+	chunk[1] = p->channels.r;
+	chunk[2] = p->channels.g;
+	chunk[3] = p->channels.b;
+	fwrite(chunk, 1, 4, dest);
+	e->stats.total_bits += 32;
+	e->stats.op_to_pixels.rgb += 1;
+}
+
+//
 // Encode some pixels using QOI.
 //
 // dest:   file to write encoded data to
@@ -191,6 +228,8 @@ void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n) 
 		}
 
 		pixel_difference_t diff = pixel_subtract(p, e->last_pixel);
+		// remember this pixel
+		e->last_pixel = p;
 		if (op_diff_compatible(&diff)) {
 			// QOI_OP_DIFF
 			write_diff(dest, e, &diff);
@@ -201,6 +240,13 @@ void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n) 
 			write_luma(dest, e, &diff);
 			// handled
 			continue;
+		}
+
+		// now we just have to encode the whole pixel
+		if (e->desc.channels == RGBA) {
+			write_rgba(dest, e, &p);
+		} else {
+			write_rgb(dest, e, &p);
 		}
 	}
 }
