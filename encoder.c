@@ -182,7 +182,7 @@ void write_rgba(FILE *dest, Encoder *e, pixel_t *p) {
 // e:    QOI encoder to use
 // p:    pixel to write
 //
-void write_rgba(FILE *dest, Encoder *e, pixel_t *p) {
+void write_rgb(FILE *dest, Encoder *e, pixel_t *p) {
 	uint8_t chunk[4];
 	chunk[0] = QOI_OP_RGB;
 	chunk[1] = p->channels.r;
