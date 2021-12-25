@@ -226,7 +226,8 @@ void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n) 
 		}
 
 		uint8_t hash = pixel_hash(p);
-		if ((e->consecutive_index_0_chunks < 6 || hash != 0) && pixel_equal(p, e->seen_pixels[hash])) {
+		if ((e->consecutive_index_0_chunks < 6 || hash != 0)
+		    && pixel_equal(p, e->seen_pixels[hash])) {
 			// pixel is in our table, so use the index
 			write_index(dest, e, hash);
 			// remember this pixel
