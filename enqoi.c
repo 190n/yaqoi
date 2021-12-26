@@ -12,8 +12,24 @@
 
 #define OPTIONS "hvi:o:"
 
+FILE *infile, *outfile;
+unsigned char *data = NULL;
+Encoder *e = NULL;
+
+void cleanup() {
+	fclose(infile);
+	fclose(outfile);
+	if (data) {
+		stbi_image_free(data);
+	}
+	if (e) {
+		encoder_delete(&e);
+	}
+}
+
 int main(int argc, char **argv) {
-	FILE *infile = stdin, *outfile = stdout;
+	infile = stdin;
+	outfile = stdout;
 	bool verbose = false;
 	int opt = 0;
 
@@ -27,17 +43,19 @@ int main(int argc, char **argv) {
 				break;
 			case 'i':
 				infile = fopen(optarg, "rb");
-				if (infile == NULL) {
+				if (!infile) {
 					fprintf(stderr, "%s: %s: ", argv[0], optarg);
 					perror("");
+					cleanup();
 					return 1;
 				}
 				break;
 			case 'o':
 				outfile = fopen(optarg, "wb");
-				if (outfile == NULL) {
+				if (!outfile) {
 					fprintf(stderr, "%s: %s: ", argv[0], optarg);
 					perror("");
+					cleanup();
 					return 1;
 				}
 				break;
@@ -50,15 +68,28 @@ int main(int argc, char **argv) {
 	(void) verbose;
 
 	int x, y, n;
-	unsigned char *data = stbi_load_from_file(infile, &x, &y, &n, 0);
-	if (data == NULL) {
+	data = stbi_load_from_file(infile, &x, &y, &n, 4);
+	if (!data) {
 		fprintf(stderr, "%s: failed to decode input: %s\n", argv[0], stbi_failure_reason());
+		cleanup();
+		return 1;
 	}
 
-	fprintf(stderr, "w, h, c = %d, %d, %d\n", x, y, n);
+	// 2 channels = gray + alpha
+	// 4 channels = RGBA
+	qoi_channels_t channels = (n == 2 || n == 4) ? RGBA : RGB;
 
-	stbi_image_free(data);
-	fclose(infile);
-	fclose(outfile);
+	e = encoder_create(verbose, &(qoi_desc_t) {
+	                                .width = x,
+	                                .height = y,
+	                                .colorspace = QOI_SRGB,
+	                                .channels = channels,
+	                            });
+
+	encoder_write_header(outfile, e);
+	encoder_encode_pixels(outfile, e, (pixel_t *) data, ((uint64_t) x) * ((uint64_t) y));
+	encoder_finish(outfile);
+
+	cleanup();
 	return 0;
 }
