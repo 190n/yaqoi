@@ -278,7 +278,7 @@ void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n) 
 		}
 
 		// now we just have to encode the whole pixel
-		if (e->desc.channels == RGBA) {
+		if (diff.a != 0) {
 			write_rgba(dest, e, &p);
 		} else {
 			write_rgb(dest, e, &p);
