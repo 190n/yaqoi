@@ -286,6 +286,20 @@ void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n) 
 }
 
 //
+// Get statistics from the operation of a QOI encoder. If the encoder was not set to track
+// statistics, this function returns NULL.
+//
+// e: QOI encoder to inspect
+//
+qoi_stats_t *encoder_get_stats(Encoder *e) {
+	if (e->track_stats) {
+		return &e->stats;
+	} else {
+		return NULL;
+	}
+}
+
+//
 // Free an Encoder and set the passed pointer to NULL.
 //
 // e: double pointer to the QOI encoder
