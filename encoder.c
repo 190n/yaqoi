@@ -30,6 +30,7 @@ Encoder *encoder_create(bool track_stats, qoi_desc_t *desc) {
 		e->track_stats = track_stats;
 		e->desc = *desc;
 		e->total_pixels = ((uint64_t) desc->width) * ((uint64_t) desc->height);
+		e->last_pixel.channels.a = 255;
 	}
 
 	return e;
