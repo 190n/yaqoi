@@ -1,7 +1,7 @@
 #include "encoder.h"
 
 int main(void) {
-	Encoder *e = encoder_create(&(qoi_desc_t) {
+	Encoder *e = encoder_create(true, &(qoi_desc_t) {
 	    .width = 2,
 	    .height = 2,
 	    .channels = RGB,

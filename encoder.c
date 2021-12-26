@@ -14,6 +14,7 @@ struct Encoder {
 	uint8_t run_length;
 	uint8_t consecutive_index_0_chunks;
 	uint64_t total_pixels;
+	bool track_stats;
 };
 
 //
@@ -22,10 +23,11 @@ struct Encoder {
 // track_stats: whether to track statistics during encoding
 // desc:        information about the file to encode
 //
-Encoder *encoder_create(qoi_desc_t *desc) {
+Encoder *encoder_create(bool track_stats, qoi_desc_t *desc) {
 	// use calloc for zero initialization
 	Encoder *e = (Encoder *) calloc(1, sizeof(Encoder));
 	if (e) {
+		e->track_stats = track_stats;
 		e->desc = *desc;
 		e->total_pixels = ((uint64_t) desc->width) * ((uint64_t) desc->height);
 	}
@@ -62,9 +64,13 @@ void write_run(FILE *dest, Encoder *e) {
 	uint8_t chunk = QOI_OP_RUN;
 	chunk |= (e->run_length - 1);
 	fputc(chunk, dest);
-	e->stats.total_bits += 8;
-	e->stats.total_pixels += e->run_length;
-	e->stats.op_to_pixels.run += e->run_length;
+
+	if (e->track_stats) {
+		e->stats.total_bits += 8;
+		e->stats.total_pixels += e->run_length;
+		e->stats.op_to_pixels.run += e->run_length;
+	}
+
 	e->run_length = 0;
 	e->consecutive_index_0_chunks = 0;
 }
@@ -80,9 +86,13 @@ void write_index(FILE *dest, Encoder *e, uint8_t index) {
 	uint8_t chunk = QOI_OP_INDEX;
 	chunk |= index;
 	fputc(chunk, dest);
-	e->stats.total_bits += 8;
-	e->stats.total_pixels += 1;
-	e->stats.op_to_pixels.index += 1;
+
+	if (e->track_stats) {
+		e->stats.total_bits += 8;
+		e->stats.total_pixels += 1;
+		e->stats.op_to_pixels.index += 1;
+	}
+
 	if (index == 0) {
 		e->consecutive_index_0_chunks++;
 	} else {
@@ -114,9 +124,13 @@ void write_diff(FILE *dest, Encoder *e, pixel_difference_t *diff) {
 	chunk |= (dg << 2);
 	chunk |= (db << 0);
 	fputc(chunk, dest);
-	e->stats.total_bits += 8;
-	e->stats.total_pixels += 1;
-	e->stats.op_to_pixels.diff += 1;
+
+	if (e->track_stats) {
+		e->stats.total_bits += 8;
+		e->stats.total_pixels += 1;
+		e->stats.op_to_pixels.diff += 1;
+	}
+
 	e->consecutive_index_0_chunks = 0;
 }
 
@@ -147,9 +161,13 @@ void write_luma(FILE *dest, Encoder *e, pixel_difference_t *diff) {
 	chunk[0] = QOI_OP_LUMA | dg;
 	chunk[1] = (dr_dg << 4) | (db_dg << 0);
 	fwrite(chunk, 1, 2, dest);
-	e->stats.total_bits += 16;
-	e->stats.total_pixels += 1;
-	e->stats.op_to_pixels.luma += 1;
+	
+	if (e->track_stats) {
+		e->stats.total_bits += 16;
+		e->stats.total_pixels += 1;
+		e->stats.op_to_pixels.luma += 1;
+	}
+
 	e->consecutive_index_0_chunks = 0;
 }
 
@@ -168,9 +186,13 @@ void write_rgba(FILE *dest, Encoder *e, pixel_t *p) {
 	chunk[3] = p->channels.b;
 	chunk[4] = p->channels.a;
 	fwrite(chunk, 1, 5, dest);
-	e->stats.total_bits += 40;
-	e->stats.total_pixels += 1;
-	e->stats.op_to_pixels.rgba += 1;
+
+	if (e->track_stats) {
+		e->stats.total_bits += 40;
+		e->stats.total_pixels += 1;
+		e->stats.op_to_pixels.rgba += 1;
+	}
+
 	e->consecutive_index_0_chunks = 0;
 }
 
@@ -188,9 +210,13 @@ void write_rgb(FILE *dest, Encoder *e, pixel_t *p) {
 	chunk[2] = p->channels.g;
 	chunk[3] = p->channels.b;
 	fwrite(chunk, 1, 4, dest);
-	e->stats.total_bits += 32;
-	e->stats.total_pixels += 1;
-	e->stats.op_to_pixels.rgb += 1;
+
+	if (e->track_stats) {
+		e->stats.total_bits += 32;
+		e->stats.total_pixels += 1;
+		e->stats.op_to_pixels.rgb += 1;
+	}
+
 	e->consecutive_index_0_chunks = 0;
 }
 
