@@ -12,10 +12,8 @@ struct Encoder {
 	pixel_t seen_pixels[64];
 	pixel_t last_pixel;
 	uint8_t run_length;
-	bool header_written;
-	uint64_t pixels_written;
-	bool end_marker_written;
 	uint8_t consecutive_index_0_chunks;
+	uint64_t total_pixels;
 };
 
 //
@@ -29,7 +27,7 @@ Encoder *encoder_create(qoi_desc_t *desc) {
 	Encoder *e = (Encoder *) calloc(1, sizeof(Encoder));
 	if (e) {
 		e->desc = *desc;
-		e->stats.total_pixels = ((uint64_t) desc->width) * ((uint64_t) desc->height);
+		e->total_pixels = ((uint64_t) desc->width) * ((uint64_t) desc->height);
 	}
 
 	return e;
@@ -43,10 +41,6 @@ Encoder *encoder_create(qoi_desc_t *desc) {
 //
 void encoder_write_header(FILE *dest, Encoder *e) {
 	if (e) {
-		if (e->header_written) {
-			return;
-		}
-		e->header_written = true;
 		qoi_header_t h;
 		store_u32be(h.magic, QOI_MAGIC);
 		store_u32be((uint8_t *) &h.width, e->desc.width);
@@ -203,10 +197,6 @@ void write_rgb(FILE *dest, Encoder *e, pixel_t *p) {
 // n:      number of pixels to encode
 //
 void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n) {
-	if (e->end_marker_written) {
-		return;
-	}
-
 	for (uint64_t i = 0; i < n; i++) {
 		pixel_t p = pixels[i];
 		if (pixel_equal(p, e->last_pixel)) {
