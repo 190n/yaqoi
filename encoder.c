@@ -161,7 +161,7 @@ void write_luma(FILE *dest, Encoder *e, pixel_difference_t *diff) {
 	chunk[0] = QOI_OP_LUMA | dg;
 	chunk[1] = (dr_dg << 4) | (db_dg << 0);
 	fwrite(chunk, 1, 2, dest);
-	
+
 	if (e->track_stats) {
 		e->stats.total_bits += 16;
 		e->stats.total_pixels += 1;
