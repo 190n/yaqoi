@@ -1,6 +1,6 @@
 CC = clang
-CFLAGS = -Wall -Wextra -Werror -Wpedantic -O2 -g
-LFLAGS =
+CFLAGS = -Wall -Wextra -Werror -Wpedantic -O2 -g -Ivendor/stb
+LFLAGS = -lm
 ENQOI_OBJS = enqoi.o encoder.o
 DEQOI_OBJS = deqoi.o
 RM = rm -f

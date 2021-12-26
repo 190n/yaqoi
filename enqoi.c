@@ -1,5 +1,8 @@
 #include "encoder.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 int main(void) {
 	Encoder *e = encoder_create(true, &(qoi_desc_t) {
 	                                      .width = 2,
