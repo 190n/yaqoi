@@ -38,4 +38,7 @@ typedef struct {
 #define QOI_OP_LUMA  0x80 // 0b10
 #define QOI_OP_RUN   0xc0 // 0b11
 
+#define QOI_END_MARKER                                                                             \
+	{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }
+
 #endif
