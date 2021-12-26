@@ -160,7 +160,7 @@ void write_luma(FILE *dest, Encoder *e, pixel_difference_t *diff) {
 	uint8_t dg = diff->g + 32, dr_dg = diff->r - dg + 8, db_dg = diff->b - dg + 8;
 	chunk[0] = QOI_OP_LUMA | dg;
 	chunk[1] = (dr_dg << 4) | (db_dg << 0);
-	fwrite(chunk, 1, 2, dest);
+	fwrite(chunk, sizeof(uint8_t), 2, dest);
 
 	if (e->track_stats) {
 		e->stats.total_bits += 16;
@@ -185,7 +185,7 @@ void write_rgba(FILE *dest, Encoder *e, pixel_t *p) {
 	chunk[2] = p->channels.g;
 	chunk[3] = p->channels.b;
 	chunk[4] = p->channels.a;
-	fwrite(chunk, 1, 5, dest);
+	fwrite(chunk, sizeof(uint8_t), 5, dest);
 
 	if (e->track_stats) {
 		e->stats.total_bits += 40;
@@ -209,7 +209,7 @@ void write_rgb(FILE *dest, Encoder *e, pixel_t *p) {
 	chunk[1] = p->channels.r;
 	chunk[2] = p->channels.g;
 	chunk[3] = p->channels.b;
-	fwrite(chunk, 1, 4, dest);
+	fwrite(chunk, sizeof(uint8_t), 4, dest);
 
 	if (e->track_stats) {
 		e->stats.total_bits += 32;
@@ -283,6 +283,16 @@ void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n) 
 			write_rgb(dest, e, &p);
 		}
 	}
+}
+
+//
+// Write the end marker to a QOI file.
+//
+// dest: file to write to
+//
+void encoder_finish(FILE *dest) {
+	uint8_t marker[] = QOI_END_MARKER;
+	fwrite(marker, sizeof(uint8_t), sizeof(marker), dest);
 }
 
 //
