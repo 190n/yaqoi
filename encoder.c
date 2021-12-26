@@ -12,7 +12,6 @@ struct Encoder {
 	pixel_t seen_pixels[64];
 	pixel_t last_pixel;
 	uint8_t run_length;
-	uint8_t consecutive_index_0_chunks;
 	uint64_t total_pixels;
 	bool track_stats;
 };
@@ -73,7 +72,6 @@ void write_run(FILE *dest, Encoder *e) {
 	}
 
 	e->run_length = 0;
-	e->consecutive_index_0_chunks = 0;
 }
 
 //
@@ -92,12 +90,6 @@ void write_index(FILE *dest, Encoder *e, uint8_t index) {
 		e->stats.total_bits += 8;
 		e->stats.total_pixels += 1;
 		e->stats.op_to_pixels.index += 1;
-	}
-
-	if (index == 0) {
-		e->consecutive_index_0_chunks++;
-	} else {
-		e->consecutive_index_0_chunks = 0;
 	}
 }
 
@@ -131,8 +123,6 @@ void write_diff(FILE *dest, Encoder *e, pixel_difference_t *diff) {
 		e->stats.total_pixels += 1;
 		e->stats.op_to_pixels.diff += 1;
 	}
-
-	e->consecutive_index_0_chunks = 0;
 }
 
 //
@@ -168,8 +158,6 @@ void write_luma(FILE *dest, Encoder *e, pixel_difference_t *diff) {
 		e->stats.total_pixels += 1;
 		e->stats.op_to_pixels.luma += 1;
 	}
-
-	e->consecutive_index_0_chunks = 0;
 }
 
 //
@@ -193,8 +181,6 @@ void write_rgba(FILE *dest, Encoder *e, pixel_t *p) {
 		e->stats.total_pixels += 1;
 		e->stats.op_to_pixels.rgba += 1;
 	}
-
-	e->consecutive_index_0_chunks = 0;
 }
 
 //
@@ -217,8 +203,6 @@ void write_rgb(FILE *dest, Encoder *e, pixel_t *p) {
 		e->stats.total_pixels += 1;
 		e->stats.op_to_pixels.rgb += 1;
 	}
-
-	e->consecutive_index_0_chunks = 0;
 }
 
 //
@@ -249,8 +233,7 @@ void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n) 
 		}
 
 		uint8_t hash = pixel_hash(p);
-		if ((e->consecutive_index_0_chunks < 6 || hash != 0)
-		    && pixel_equal(p, e->seen_pixels[hash])) {
+		if (pixel_equal(p, e->seen_pixels[hash])) {
 			// pixel is in our table, so use the index
 			write_index(dest, e, hash);
 			// remember this pixel
