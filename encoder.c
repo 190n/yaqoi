@@ -148,7 +148,7 @@ bool op_luma_compatible(pixel_difference_t *diff) {
 //
 void write_luma(FILE *dest, Encoder *e, pixel_difference_t *diff) {
 	uint8_t chunk[2];
-	uint8_t dg = diff->g + 32, dr_dg = diff->r - dg + 8, db_dg = diff->b - dg + 8;
+	uint8_t dg = diff->g + 32, dr_dg = diff->r - diff->g + 8, db_dg = diff->b - diff->g + 8;
 	chunk[0] = QOI_OP_LUMA | dg;
 	chunk[1] = (dr_dg << 4) | (db_dg << 0);
 	fwrite(chunk, sizeof(uint8_t), 2, dest);
