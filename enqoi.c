@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
 
 	encoder_write_header(outfile, e);
 	encoder_encode_pixels(outfile, e, (pixel_t *) data, ((uint64_t) x) * ((uint64_t) y));
-	encoder_finish(outfile);
+	encoder_finish(outfile, e);
 
 	cleanup();
 	return 0;

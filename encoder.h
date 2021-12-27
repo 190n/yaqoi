@@ -16,7 +16,7 @@ void encoder_write_header(FILE *dest, Encoder *e);
 
 void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n);
 
-void encoder_finish(FILE *dest);
+void encoder_finish(FILE *dest, Encoder *e);
 
 qoi_stats_t *encoder_get_stats(Encoder *e);
 

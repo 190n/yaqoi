@@ -274,7 +274,12 @@ void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n) 
 //
 // dest: file to write to
 //
-void encoder_finish(FILE *dest) {
+void encoder_finish(FILE *dest, Encoder *e) {
+	// if a run was going, we must end it
+	if (e->run_length > 0) {
+		write_run(dest, e);
+	}
+
 	uint8_t marker[] = QOI_END_MARKER;
 	fwrite(marker, sizeof(uint8_t), sizeof(marker), dest);
 }
