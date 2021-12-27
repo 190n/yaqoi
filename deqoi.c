@@ -12,6 +12,6 @@ int main(void) {
 	pixel_difference_t diff = pixel_subtract(b, a);
 	printf("%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8 "\n", b.channels.r, b.channels.g,
 	    b.channels.b, b.channels.a);
-	printf("%" PRId16 " %" PRId16 " %" PRId16 " %" PRId16 "\n", diff.r, diff.g, diff.b, diff.a);
+	printf("%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8 "\n", diff.r, diff.g, diff.b, diff.a);
 	return 0;
 }

@@ -100,8 +100,8 @@ void write_index(FILE *dest, Encoder *e, uint8_t index) {
 // diff: pixel difference to examine
 //
 bool op_diff_compatible(pixel_difference_t *diff) {
-	return (-2 <= diff->r && diff->r <= 1) && (-2 <= diff->g && diff->g <= 1)
-	       && (-2 <= diff->b && diff->b <= 1) && (diff->a == 0);
+	return (254 <= diff->r || diff->r <= 1) && (254 <= diff->g || diff->g <= 1)
+	       && (254 <= diff->b || diff->b <= 1) && (diff->a == 0);
 }
 
 //
@@ -134,9 +134,9 @@ void write_diff(FILE *dest, Encoder *e, pixel_difference_t *diff) {
 // diff: pixel difference to examine
 //
 bool op_luma_compatible(pixel_difference_t *diff) {
-	int16_t dr_dg = diff->r - diff->g, db_dg = diff->b - diff->g;
-	return (-32 <= diff->g && diff->g <= 31) && (-8 <= dr_dg && dr_dg <= 7)
-	       && (-8 <= db_dg && db_dg <= 7) && (diff->a == 0);
+	uint8_t dr_dg = diff->r - diff->g, db_dg = diff->b - diff->g;
+	return (224 <= diff->g || diff->g <= 31) && (248 <= dr_dg || dr_dg <= 7)
+	       && (248 <= db_dg || db_dg <= 7) && (diff->a == 0);
 }
 
 //
