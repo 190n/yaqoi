@@ -90,6 +90,11 @@ int main(int argc, char **argv) {
 	                                .colorspace = QOI_SRGB,
 	                                .channels = channels,
 	                            });
+	if (!e) {
+		fprintf(stderr, "%s: failed to create QOI encoder\n", argv[0]);
+		cleanup();
+		return 1;
+	}
 
 	encoder_write_header(outfile, e);
 	encoder_encode_pixels(outfile, e, (pixel_t *) data, ((uint64_t) x) * ((uint64_t) y));
