@@ -1,23 +1,19 @@
 CC = clang
 CFLAGS = -Wall -Wextra -Werror -Wpedantic -O2 -g -Ivendor/stb
 LFLAGS = -lm
-ENQOI_OBJS = enqoi.o encoder.o stbi.o
-DEQOI_OBJS = deqoi.o
+OBJS = enqoi.o encoder.o stbi.o
 RM = rm -f
 
-all: enqoi deqoi
+all: enqoi
 
-enqoi: $(ENQOI_OBJS)
-	$(CC) $(LFLAGS) $(ENQOI_OBJS) -o enqoi
-
-deqoi: $(DEQOI_OBJS)
-	$(CC) $(LFLAGS) $(DEQOI_OBJS) -o deqoi
+enqoi: $(OBJS)
+	$(CC) $(LFLAGS) $(OBJS) -o enqoi
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
 
 clean:
-	$(RM) enqoi deqoi $(ENQOI_OBJS) $(DEQOI_OBJS)
+	$(RM) enqoi $(OBJS)
 
 scan-build: clean
 	scan-build --use-cc=$(CC) make
