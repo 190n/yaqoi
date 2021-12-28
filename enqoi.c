@@ -27,6 +27,16 @@ void cleanup() {
 	}
 }
 
+void usage(const char *program_name) {
+	fprintf(stderr,
+	    "usage: %s [-hv] [-i input] [-o output]\n"
+	    "    -h:        show usage\n"
+	    "    -v:        print encoding statistics\n"
+	    "    -i input:  specify input file. must be PNG, PPM, or PGM. default is stdin.\n"
+	    "    -o output: specify output file. default is stdout.\n",
+	    program_name);
+}
+
 int main(int argc, char **argv) {
 	infile = stdin;
 	outfile = stdout;
@@ -36,7 +46,7 @@ int main(int argc, char **argv) {
 	while ((opt = getopt(argc, argv, OPTIONS)) != -1) {
 		switch (opt) {
 			case 'h':
-				fprintf(stderr, "help\n");
+				usage(argv[0]);
 				return 1;
 			case 'v':
 				verbose = true;
@@ -60,7 +70,7 @@ int main(int argc, char **argv) {
 				}
 				break;
 			default:
-				fprintf(stderr, "help\n");
+				usage(argv[0]);
 				return 1;
 		}
 	}
