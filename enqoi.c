@@ -4,6 +4,7 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <time.h>
 
 #define OPTIONS "hvi:o:"
 
@@ -97,29 +98,36 @@ int main(int argc, char **argv) {
 	}
 
 	encoder_write_header(outfile, e);
+	clock_t start = clock();
 	encoder_encode_pixels(outfile, e, (pixel_t *) data, ((uint64_t) x) * ((uint64_t) y));
+	clock_t end = clock();
 	encoder_finish(outfile, e);
 
 	if (verbose) {
 		qoi_stats_t *stats = encoder_get_stats(e);
 		double bpp = (double) stats->total_bits / stats->total_pixels,
-			percent_rgb = 100.0 * stats->op_to_pixels.rgb / stats->total_pixels,
-			percent_rgba = 100.0 * stats->op_to_pixels.rgba / stats->total_pixels,
-			percent_index = 100.0 * stats->op_to_pixels.index / stats->total_pixels,
-			percent_diff = 100.0 * stats->op_to_pixels.diff / stats->total_pixels,
-			percent_luma = 100.0 * stats->op_to_pixels.luma / stats->total_pixels,
-			percent_run = 100.0 * stats->op_to_pixels.run / stats->total_pixels;
+		       percent_rgb = 100.0 * stats->op_to_pixels.rgb / stats->total_pixels,
+		       percent_rgba = 100.0 * stats->op_to_pixels.rgba / stats->total_pixels,
+		       percent_index = 100.0 * stats->op_to_pixels.index / stats->total_pixels,
+		       percent_diff = 100.0 * stats->op_to_pixels.diff / stats->total_pixels,
+		       percent_luma = 100.0 * stats->op_to_pixels.luma / stats->total_pixels,
+		       percent_run = 100.0 * stats->op_to_pixels.run / stats->total_pixels;
+
+		double encode_time = ((double) (end - start)) / CLOCKS_PER_SEC,
+		       speed = stats->total_pixels / encode_time / 1000000.0;
 
 		fprintf(stderr,
-			"BPP: %f\n"
-			"operator usage by number of pixels:\n"
-			"    QOI_OP_RGB:   %f%%\n"
-			"    QOI_OP_RGBA:  %f%%\n"
-			"    QOI_OP_INDEX: %f%%\n"
-			"    QOI_OP_DIFF:  %f%%\n"
-			"    QOI_OP_LUMA:  %f%%\n"
-			"    QOI_OP_RUN:   %f%%\n",
-			bpp, percent_rgb, percent_rgba, percent_index, percent_diff, percent_luma, percent_run);
+		    "BPP:   %f\n"
+		    "speed: %f MP/s\n"
+		    "operator usage by number of pixels:\n"
+		    "    QOI_OP_RGB:   %f%%\n"
+		    "    QOI_OP_RGBA:  %f%%\n"
+		    "    QOI_OP_INDEX: %f%%\n"
+		    "    QOI_OP_DIFF:  %f%%\n"
+		    "    QOI_OP_LUMA:  %f%%\n"
+		    "    QOI_OP_RUN:   %f%%\n",
+		    bpp, speed, percent_rgb, percent_rgba, percent_index, percent_diff, percent_luma,
+		    percent_run);
 	}
 
 	cleanup();
