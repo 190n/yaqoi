@@ -28,7 +28,7 @@ void usage(const char *program_name) {
 	    "usage: %s [-hv] [-i input] [-o output]\n"
 	    "    -h:        show usage\n"
 	    "    -v:        print encoding statistics\n"
-	    "    -i input:  specify input file. must be PNG, PPM, or PGM. default is stdin.\n"
+	    "    -i input:  specify input file. default is stdin.\n"
 	    "    -o output: specify output file. default is stdout.\n",
 	    program_name);
 }
