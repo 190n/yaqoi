@@ -1,6 +1,7 @@
 #include "encoder.h"
 
 #include "bits.h"
+#include "container.h"
 #include "pixel.h"
 
 #include <stdlib.h>
@@ -42,15 +43,7 @@ Encoder *encoder_create(bool track_stats, qoi_desc_t *desc) {
 // e:    QOI encoder to use
 //
 void encoder_write_header(FILE *dest, Encoder *e) {
-	if (e) {
-		qoi_header_t h;
-		store_u32be(h.magic, QOI_MAGIC);
-		store_u32be((uint8_t *) &h.width, e->desc.width);
-		store_u32be((uint8_t *) &h.height, e->desc.height);
-		h.channels = e->desc.channels;
-		h.colorspace = e->desc.colorspace;
-		fwrite(&h, QOI_HEADER_LENGTH, 1, dest);
-	}
+	write_header(dest, &(e->desc));
 }
 
 //
@@ -270,9 +263,10 @@ void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n) 
 }
 
 //
-// Write the end marker to a QOI file.
+// Complete any current run of pixels and write the end marker to a QOI file.
 //
 // dest: file to write to
+// e:    QOI encoder to use
 //
 void encoder_finish(FILE *dest, Encoder *e) {
 	// if a run was going, we must end it
@@ -280,8 +274,7 @@ void encoder_finish(FILE *dest, Encoder *e) {
 		write_run(dest, e);
 	}
 
-	uint8_t marker[] = QOI_END_MARKER;
-	fwrite(marker, sizeof(uint8_t), sizeof(marker), dest);
+	write_end_marker(dest);
 }
 
 //
