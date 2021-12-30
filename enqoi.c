@@ -8,7 +8,9 @@
 #include <stdio.h>
 #include <time.h>
 
-#define OPTIONS "hlvi:o:"
+#define OPTIONS         "hlvi:o:t:"
+#define MAX_THREADS     256
+#define DEFAULT_THREADS 1
 
 FILE *infile = NULL, *outfile = NULL;
 unsigned char *data = NULL;
@@ -32,13 +34,14 @@ void cleanup() {
 void usage(const char *program_name) {
 	fprintf(stderr,
 	    "usage: %s [-hv] [-i input] [-o output]\n"
-	    "    -h:        show usage\n"
-	    "    -l:        indicate that output file is linear sRGB as opposed to gamma. note that no "
-	    "colorspace conversion is performed.\n"
-	    "    -v:        print encoding statistics\n"
-	    "    -i input:  specify input file. default is stdin.\n"
-	    "    -o output: specify output file. default is stdout.\n",
-	    program_name);
+	    "    -h:         show usage\n"
+	    "    -l:         indicate that output file is linear sRGB as opposed to gamma. note that "
+	    "no colorspace conversion is performed.\n"
+	    "    -v:         print encoding statistics\n"
+	    "    -i input:   specify input file. default is stdin.\n"
+	    "    -o output:  specify output file. default is stdout.\n"
+	    "    -t threads: specify number of threads to use. 1-%d, default %d.\n",
+	    program_name, MAX_THREADS, DEFAULT_THREADS);
 }
 
 int main(int argc, char **argv) {
@@ -46,6 +49,7 @@ int main(int argc, char **argv) {
 	outfile = stdout;
 	bool verbose = false, linear_srgb = false;
 	int opt = 0;
+	uint32_t threads = DEFAULT_THREADS;
 
 	while ((opt = getopt(argc, argv, OPTIONS)) != -1) {
 		switch (opt) {
@@ -72,6 +76,16 @@ int main(int argc, char **argv) {
 				if (!outfile) {
 					fprintf(stderr, "%s: %s: ", argv[0], optarg);
 					perror("");
+					cleanup();
+					return 1;
+				}
+				break;
+			case 't':
+				threads = strtoul(optarg, NULL, 10);
+				if (threads < 1 || threads > MAX_THREADS) {
+					fprintf(stderr,
+					    "%s: invalid number of threads %" PRIu32 ". must be between 1 and %d.\n",
+					    argv[0], threads, MAX_THREADS);
 					cleanup();
 					return 1;
 				}
