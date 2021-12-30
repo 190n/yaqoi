@@ -8,13 +8,17 @@
 
 #define OPTIONS "hvi:o:"
 
-FILE *infile, *outfile;
+FILE *infile = NULL, *outfile = NULL;
 unsigned char *data = NULL;
 Encoder *e = NULL;
 
 void cleanup() {
-	fclose(infile);
-	fclose(outfile);
+	if (infile) {
+		fclose(infile);
+	}
+	if (outfile) {
+		fclose(outfile);
+	}
 	if (data) {
 		stbi_image_free(data);
 	}
