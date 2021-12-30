@@ -37,16 +37,6 @@ Encoder *encoder_create(bool track_stats, qoi_desc_t *desc) {
 }
 
 //
-// Write the header of a QOI file.
-//
-// dest: file to write the header to
-// e:    QOI encoder to use
-//
-void encoder_write_header(FILE *dest, Encoder *e) {
-	write_header(dest, &(e->desc));
-}
-
-//
 // Write a QOI_OP_RUN chunk representing an encoder's current run to a file, update statistics, and
 // end the run in the encoder's state.
 //
@@ -263,7 +253,7 @@ void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n) 
 }
 
 //
-// Complete any current run of pixels and write the end marker to a QOI file.
+// Complete any current run of pixels.
 //
 // dest: file to write to
 // e:    QOI encoder to use
@@ -273,8 +263,6 @@ void encoder_finish(FILE *dest, Encoder *e) {
 	if (e->run_length > 0) {
 		write_run(dest, e);
 	}
-
-	write_end_marker(dest);
 }
 
 //

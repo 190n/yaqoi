@@ -1,3 +1,4 @@
+#include "container.h"
 #include "encoder.h"
 #include "stb_image.h"
 
@@ -88,24 +89,26 @@ int main(int argc, char **argv) {
 	// 2 channels = gray + alpha
 	// 4 channels = RGBA
 	qoi_channels_t channels = (n == 2 || n == 4) ? RGBA : RGB;
+	qoi_desc_t desc = {
+		.width = x,
+		.height = y,
+		.colorspace = QOI_SRGB,
+		.channels = channels,
+	};
 
-	e = encoder_create(verbose, &(qoi_desc_t) {
-	                                .width = x,
-	                                .height = y,
-	                                .colorspace = QOI_SRGB,
-	                                .channels = channels,
-	                            });
+	e = encoder_create(verbose, &desc);
 	if (!e) {
 		fprintf(stderr, "%s: failed to create QOI encoder\n", argv[0]);
 		cleanup();
 		return 1;
 	}
 
-	encoder_write_header(outfile, e);
+	write_header(outfile, &desc);
 	clock_t start = clock();
 	encoder_encode_pixels(outfile, e, (pixel_t *) data, ((uint64_t) x) * ((uint64_t) y));
 	clock_t end = clock();
 	encoder_finish(outfile, e);
+	write_end_marker(outfile);
 
 	if (verbose) {
 		qoi_stats_t *stats = encoder_get_stats(e);

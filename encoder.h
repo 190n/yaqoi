@@ -12,8 +12,6 @@ typedef struct Encoder Encoder;
 
 Encoder *encoder_create(bool track_stats, qoi_desc_t *desc);
 
-void encoder_write_header(FILE *dest, Encoder *e);
-
 void encoder_encode_pixels(FILE *dest, Encoder *e, pixel_t *pixels, uint64_t n);
 
 void encoder_finish(FILE *dest, Encoder *e);
