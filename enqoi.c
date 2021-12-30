@@ -32,7 +32,8 @@ void usage(const char *program_name) {
 	fprintf(stderr,
 	    "usage: %s [-hv] [-i input] [-o output]\n"
 	    "    -h:        show usage\n"
-		"    -l:        indicate that output file is linear sRGB as opposed to gamma. note that no colorspace conversion is performed.\n"
+	    "    -l:        indicate that output file is linear sRGB as opposed to gamma. note that no "
+	    "colorspace conversion is performed.\n"
 	    "    -v:        print encoding statistics\n"
 	    "    -i input:  specify input file. default is stdin.\n"
 	    "    -o output: specify output file. default is stdout.\n",
