@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#define OPTIONS "hvi:o:"
+#define OPTIONS "hlvi:o:"
 
 FILE *infile = NULL, *outfile = NULL;
 unsigned char *data = NULL;
@@ -32,6 +32,7 @@ void usage(const char *program_name) {
 	fprintf(stderr,
 	    "usage: %s [-hv] [-i input] [-o output]\n"
 	    "    -h:        show usage\n"
+		"    -l:        indicate that output file is linear sRGB as opposed to gamma. note that no colorspace conversion is performed.\n"
 	    "    -v:        print encoding statistics\n"
 	    "    -i input:  specify input file. default is stdin.\n"
 	    "    -o output: specify output file. default is stdout.\n",
@@ -41,7 +42,7 @@ void usage(const char *program_name) {
 int main(int argc, char **argv) {
 	infile = stdin;
 	outfile = stdout;
-	bool verbose = false;
+	bool verbose = false, linear_srgb = false;
 	int opt = 0;
 
 	while ((opt = getopt(argc, argv, OPTIONS)) != -1) {
@@ -49,6 +50,9 @@ int main(int argc, char **argv) {
 			case 'h':
 				usage(argv[0]);
 				return 1;
+			case 'l':
+				linear_srgb = true;
+				break;
 			case 'v':
 				verbose = true;
 				break;
@@ -92,7 +96,7 @@ int main(int argc, char **argv) {
 	qoi_desc_t desc = {
 		.width = x,
 		.height = y,
-		.colorspace = QOI_SRGB,
+		.colorspace = linear_srgb ? QOI_LINEAR : QOI_SRGB,
 		.channels = channels,
 	};
 
