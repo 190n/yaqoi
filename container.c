@@ -25,5 +25,5 @@ void write_header(FILE *dest, qoi_desc_t *desc) {
 //
 void write_end_marker(FILE *dest) {
 	uint8_t marker[] = QOI_END_MARKER;
-	fwrite(marker, sizeof(uint8_t), sizeof(marker), dest);
+	fwrite(marker, sizeof(uint8_t), QOI_END_MARKER_LENGTH, dest);
 }

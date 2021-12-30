@@ -40,5 +40,6 @@ typedef struct {
 
 #define QOI_END_MARKER                                                                             \
 	{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }
+#define QOI_END_MARKER_LENGTH 8
 
 #endif
