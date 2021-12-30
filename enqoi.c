@@ -3,6 +3,7 @@
 #include "stb_image.h"
 
 #include <getopt.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <time.h>
@@ -128,16 +129,26 @@ int main(int argc, char **argv) {
 		double encode_time = ((double) (end - start)) / CLOCKS_PER_SEC,
 		       speed = stats->total_pixels / encode_time / 1000000.0;
 
+		uint64_t total_size = QOI_HEADER_LENGTH + (stats->total_bits / 8) + QOI_END_MARKER_LENGTH;
+
+		if (total_size < 1024) {
+			fprintf(stderr, "file size: %6" PRIu64 " B\n", total_size);
+		} else if (total_size < 1048576) {
+			fprintf(stderr, "file size: %9.2f KiB\n", total_size / 1024.0);
+		} else {
+			fprintf(stderr, "file size: %9.2f MiB\n", total_size / 1048576.0);
+		}
+
 		fprintf(stderr,
-		    "BPP:   %f\n"
-		    "speed: %f MP/s\n"
+		    "BPP:       %11.4f\n"
+		    "speed:     %9.2f MP/s\n"
 		    "operator usage by number of pixels:\n"
-		    "    QOI_OP_RGB:   %f%%\n"
-		    "    QOI_OP_RGBA:  %f%%\n"
-		    "    QOI_OP_INDEX: %f%%\n"
-		    "    QOI_OP_DIFF:  %f%%\n"
-		    "    QOI_OP_LUMA:  %f%%\n"
-		    "    QOI_OP_RUN:   %f%%\n",
+		    "    QOI_OP_RGB:   %6.2f%%\n"
+		    "    QOI_OP_RGBA:  %6.2f%%\n"
+		    "    QOI_OP_INDEX: %6.2f%%\n"
+		    "    QOI_OP_DIFF:  %6.2f%%\n"
+		    "    QOI_OP_LUMA:  %6.2f%%\n"
+		    "    QOI_OP_RUN:   %6.2f%%\n",
 		    bpp, speed, percent_rgb, percent_rgba, percent_index, percent_diff, percent_luma,
 		    percent_run);
 	}
