@@ -4,6 +4,7 @@
 
 #include <getopt.h>
 #include <inttypes.h>
+#include <pthread.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <time.h>
@@ -43,6 +44,14 @@ void usage(const char *program_name) {
 	    "    -t threads: specify number of threads to use. 1-%d, default %d.\n",
 	    program_name, MAX_THREADS, DEFAULT_THREADS);
 }
+
+typedef struct {
+	qoi_desc_t *desc;
+	pixel_t *pixels;
+	uint64_t n_pixels;
+	uint8_t *output_buffer;
+	uint64_t output_capacity;
+} thread_args_t;
 
 int main(int argc, char **argv) {
 	infile = stdin;
@@ -115,6 +124,8 @@ int main(int argc, char **argv) {
 		.colorspace = linear_srgb ? QOI_LINEAR : QOI_SRGB,
 		.channels = channels,
 	};
+
+	pthread_t threads[MAX_THREADS];
 
 	e = encoder_create(verbose, &desc);
 	if (!e) {
