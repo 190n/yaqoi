@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 	outfile = stdout;
 	bool verbose = false, linear_srgb = false;
 	int opt = 0;
-	uint32_t threads = DEFAULT_THREADS;
+	uint32_t n_threads = DEFAULT_THREADS;
 
 	while ((opt = getopt(argc, argv, OPTIONS)) != -1) {
 		switch (opt) {
@@ -90,11 +90,11 @@ int main(int argc, char **argv) {
 				}
 				break;
 			case 't':
-				threads = strtoul(optarg, NULL, 10);
-				if (threads < 1 || threads > MAX_THREADS) {
+				n_threads = strtoul(optarg, NULL, 10);
+				if (n_threads < 1 || n_threads > MAX_THREADS) {
 					fprintf(stderr,
 					    "%s: invalid number of threads %" PRIu32 ". must be between 1 and %d.\n",
-					    argv[0], threads, MAX_THREADS);
+					    argv[0], n_threads, MAX_THREADS);
 					cleanup();
 					return 1;
 				}
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
 		.channels = channels,
 	};
 
-	pthread_t threads[MAX_THREADS];
+	// pthread_t threads[MAX_THREADS];
 
 	e = encoder_create(verbose, &desc);
 	if (!e) {
