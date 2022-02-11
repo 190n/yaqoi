@@ -12,6 +12,9 @@ enqoi: $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
 
+stbi.o: stbi.c vendor/stb/stb_image.h
+	$(CC) $(CFLAGS) -Wno-error=unused-but-set-variable -c $<
+
 clean:
 	$(RM) enqoi $(OBJS)
 
