@@ -1,7 +1,5 @@
-enqoi
-deqoi
-*.o
 .vscode
-qoi
 *.png
 *.qoi
+zig-out
+zig-cache

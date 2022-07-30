@@ -1,3 +1,6 @@
 [submodule "vendor/stb"]
 	path = vendor/stb
 	url = https://github.com/nothings/stb
+[submodule "vendor/zig-clap"]
+	path = vendor/zig-clap
+	url = https://github.com/Hejsil/zig-clap.git
