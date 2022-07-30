@@ -1,4 +1,4 @@
 yaqoi
 =====
 
-> Yet Another [QOI](https://qoiformat.org/) implementation in C.
+> Yet Another [QOI](https://qoiformat.org/) implementation in Zig.
