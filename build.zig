@@ -11,13 +11,15 @@ pub fn build(b: *std.build.Builder) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
     const mode = b.standardReleaseOptions();
 
-    const exe = b.addExecutable("yaqoi", "src/main.zig");
+    const exe = b.addExecutable("enqoi", "src/enqoi.zig");
     exe.setTarget(target);
     exe.setBuildMode(mode);
+    exe.addPackagePath("clap", "vendor/zig-clap/clap.zig");
     exe.install();
 
     const run_cmd = exe.run();
     run_cmd.step.dependOn(b.getInstallStep());
+    run_cmd.expected_exit_code = null;
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
@@ -25,7 +27,7 @@ pub fn build(b: *std.build.Builder) void {
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
-    const exe_tests = b.addTest("src/main.zig");
+    const exe_tests = b.addTest("src/enqoi.zig");
     exe_tests.setTarget(target);
     exe_tests.setBuildMode(mode);
 
