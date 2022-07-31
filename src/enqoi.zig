@@ -58,3 +58,8 @@ pub fn main() !void {
 
     _ = ally;
 }
+
+test {
+    _ = @import("clap");
+    _ = @import("./stb_image.zig");
+}

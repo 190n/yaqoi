@@ -12,9 +12,6 @@ pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
 
     const exe = b.addExecutable("enqoi", "src/enqoi.zig");
-    exe.setTarget(target);
-    exe.setBuildMode(mode);
-    exe.addPackagePath("clap", "vendor/zig-clap/clap.zig");
     exe.install();
 
     const run_cmd = exe.run();
@@ -28,8 +25,15 @@ pub fn build(b: *std.build.Builder) void {
     run_step.dependOn(&run_cmd.step);
 
     const exe_tests = b.addTest("src/enqoi.zig");
-    exe_tests.setTarget(target);
-    exe_tests.setBuildMode(mode);
+
+    for ([_]*std.build.LibExeObjStep{ exe, exe_tests }) |step| {
+        step.setTarget(target);
+        step.setBuildMode(mode);
+        step.addPackagePath("clap", "vendor/zig-clap/clap.zig");
+        step.addIncludePath("vendor/stb");
+        step.linkLibC();
+        step.addCSourceFile("src/stbi.c", &.{});
+    }
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&exe_tests.step);
