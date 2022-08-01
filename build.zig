@@ -12,6 +12,7 @@ pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
 
     const exe = b.addExecutable("enqoi", "src/enqoi.zig");
+    exe.strip = true; // since we disable a lot of stb_image stuff
     exe.install();
 
     const run_cmd = exe.run();

@@ -1,5 +1,6 @@
 const clap = @import("clap");
 const std = @import("std");
+const stb_image = @import("./stb_image.zig");
 
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -57,9 +58,23 @@ pub fn main() !void {
     _ = threads;
 
     _ = ally;
-}
 
-test {
-    _ = @import("clap");
-    _ = @import("./stb_image.zig");
+    var result = stb_image.load(&input, null);
+    defer result.deinit();
+    if (result == .ok) {
+        std.log.info("{}x{}, {} channels", .{
+            result.ok.x,
+            result.ok.y,
+            @enumToInt(result.ok.channels),
+        });
+    } else {
+        const quote = if (res.args.input) |_| "'" else "";
+        const filename = res.args.input orelse "[stdin]";
+        std.log.err("reading input {s}{s}{s}: {s}", .{
+            quote,
+            filename,
+            quote,
+            result.err,
+        });
+    }
 }
