@@ -6,6 +6,7 @@ pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const ally = arena.allocator();
+    stb_image.allocator = ally;
 
     const stderr = std.io.getStdErr().writer();
 
@@ -56,8 +57,6 @@ pub fn main() !void {
     _ = linear_srgb;
     _ = verbose;
     _ = threads;
-
-    _ = ally;
 
     var result = stb_image.load(&input, null);
     defer result.deinit();
