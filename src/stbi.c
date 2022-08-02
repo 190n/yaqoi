@@ -11,4 +11,15 @@
 #define STBI_ONLY_PIC
 #define STBI_ONLY_PNM
 
+#include <stddef.h>
+
+// defined in zig land
+void *stbiMalloc(size_t size);
+void *stbiRealloc(void *ptr, size_t new_size);
+void stbiFree(void *ptr);
+
+#define STBI_MALLOC(size)           stbiMalloc(size)
+#define STBI_REALLOC(ptr, new_size) stbiRealloc(ptr, new_size)
+#define STBI_FREE(ptr)              stbiFree(ptr)
+
 #include <stb_image.h>

@@ -3,6 +3,42 @@ const stb_image = @cImport({
     @cInclude("stb_image.h");
 });
 
+const max_align = @import("builtin").target.maxIntAlignment();
+const pad_amount = std.mem.alignForward(@sizeOf(usize), max_align);
+
+/// which allocator stb_image functions will use. defaults to the C allocator.
+/// if you set this, only do so once and before you call any stb_image functions.
+pub var allocator = std.heap.c_allocator;
+
+export fn stbiMalloc(size: usize) callconv(.C) ?[*]align(max_align) u8 {
+    const slice = allocator.alignedAlloc(u8, max_align, pad_amount + size) catch return null;
+    // store the size before the data
+    @ptrCast(*usize, slice.ptr).* = size;
+    return slice.ptr + pad_amount;
+}
+
+export fn stbiRealloc(maybe_ptr: ?[*]align(max_align) u8, new_size: usize) ?[*]align(max_align) u8 {
+    // realloc will take the alignment from the type of the old slice
+    if (maybe_ptr) |ptr| {
+        const orig_ptr = ptr - pad_amount;
+        const orig_size = @ptrCast(*const usize, orig_ptr).*;
+        const orig_slice = orig_ptr[0..(pad_amount + orig_size)];
+        const new_slice = allocator.realloc(orig_slice, pad_amount + new_size) catch return null;
+        @ptrCast(*usize, new_slice.ptr).* = new_size;
+        return new_slice.ptr + pad_amount;
+    } else return stbiMalloc(new_size);
+}
+
+export fn stbiFree(maybe_ptr: ?[*]align(max_align) u8) void {
+    // free(NULL) should work and do nothing
+    if (maybe_ptr) |ptr| {
+        const orig_ptr = ptr - pad_amount;
+        const orig_size = @ptrCast(*const usize, orig_ptr).*;
+        const orig_slice = orig_ptr[0..(pad_amount + orig_size)];
+        allocator.free(orig_slice);
+    }
+}
+
 pub const STBImageResult = union(enum) {
     err: [:0]const u8,
     ok: struct {
@@ -91,6 +127,9 @@ pub fn load(stream_ptr: anytype, desired_channels: ?Channels) STBImageResult {
     const callbacks = makeCallbacks(@TypeOf(stream_ptr));
     const result: ?[*]u8 = stb_image.stbi_load_from_callbacks(
         &callbacks,
+        // possibly cast away constness -- this is okay as stb_image itself doesn't modify the user
+        // pointer, it only passes it (as void *) to functions that might modify it, but we will
+        // cast back to a const pointer if stream_ptr was originally const.
         @intToPtr(*anyopaque, @ptrToInt(stream_ptr)),
         &x,
         &y,
@@ -115,6 +154,7 @@ pub fn load(stream_ptr: anytype, desired_channels: ?Channels) STBImageResult {
 }
 
 test "I/O callbacks" {
+    allocator = std.testing.allocator;
     const cbs = makeCallbacks(*std.io.FixedBufferStream([]const u8));
     const in_buf = "hello world";
     var out_buf: [in_buf.len]u8 = undefined;
@@ -143,6 +183,7 @@ test "I/O callbacks" {
 }
 
 test "image loading with specified channels" {
+    allocator = std.testing.allocator;
     const png = @embedFile("./test_image.png");
     var stream = std.io.fixedBufferStream(png);
     // file is RGB, but 4 should make it generate an alpha channel for us
@@ -164,6 +205,7 @@ test "image loading with specified channels" {
 }
 
 test "image loading with unspecified channels" {
+    allocator = std.testing.allocator;
     const png = @embedFile("./test_image.png");
     var stream = std.io.fixedBufferStream(png);
     var result = load(&stream, null);
@@ -184,6 +226,7 @@ test "image loading with unspecified channels" {
 }
 
 test "unsuccessful image loading" {
+    allocator = std.testing.allocator;
     const buf = [_]u8{ 1, 2, 3, 4, 5 };
     var stream = std.io.fixedBufferStream(&buf);
     var result = load(&stream, null);
