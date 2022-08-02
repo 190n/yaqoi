@@ -12,8 +12,19 @@ pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
 
     const exe = b.addExecutable("enqoi", "src/enqoi.zig");
-    exe.strip = true; // since we disable a lot of stb_image stuff
+    // TODO only strip in release builds (if zig doesn't already do that)
+    // exe.strip = true; // since we disable a lot of stb_image stuff
     exe.install();
+    const exe_tests = b.addTest("src/enqoi.zig");
+
+    for ([_]*std.build.LibExeObjStep{ exe, exe_tests }) |step| {
+        step.setTarget(target);
+        step.setBuildMode(mode);
+        step.addPackagePath("clap", "vendor/zig-clap/clap.zig");
+        step.addIncludePath("vendor/stb");
+        step.linkLibC();
+        step.addCSourceFile("src/stbi.c", &.{"-g"});
+    }
 
     const run_cmd = exe.run();
     run_cmd.step.dependOn(b.getInstallStep());
@@ -24,17 +35,6 @@ pub fn build(b: *std.build.Builder) void {
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
-
-    const exe_tests = b.addTest("src/enqoi.zig");
-
-    for ([_]*std.build.LibExeObjStep{ exe, exe_tests }) |step| {
-        step.setTarget(target);
-        step.setBuildMode(mode);
-        step.addPackagePath("clap", "vendor/zig-clap/clap.zig");
-        step.addIncludePath("vendor/stb");
-        step.linkLibC();
-        step.addCSourceFile("src/stbi.c", &.{});
-    }
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&exe_tests.step);
