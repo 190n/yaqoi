@@ -34,12 +34,6 @@ pub const Channels = enum(u3) {
     rgba = 4,
 };
 
-pub const IOCallbacks = extern struct {
-    read: fn (user: ?*anyopaque, data: ?[*]u8, size: c_int) callconv(.C) c_int,
-    skip: fn (user: ?*anyopaque, n: c_int) callconv(.C) void,
-    eof: fn (user: ?*anyopaque) callconv(.C) c_int,
-};
-
 fn makeCallbacks(comptime ContextPtr: type) stb_image.stbi_io_callbacks {
     const callbacks = struct {
         fn opaqueToContext(user: ?*anyopaque) ContextPtr {
