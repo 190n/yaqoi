@@ -14,8 +14,7 @@ pub fn build(b: *std.build.Builder) void {
     const exe = b.addExecutable("enqoi", "src/enqoi.zig");
     // TODO only strip in release builds (if zig doesn't already do that)
     // exe.strip = true; // since we disable a lot of stb_image stuff
-    exe.install();
-    const exe_tests = b.addTest("src/enqoi.zig");
+    const exe_tests = b.addTestExe("enqoi-tests", "src/enqoi.zig");
 
     for ([_]*std.build.LibExeObjStep{ exe, exe_tests }) |step| {
         step.setTarget(target);
@@ -23,7 +22,8 @@ pub fn build(b: *std.build.Builder) void {
         step.addPackagePath("clap", "vendor/zig-clap/clap.zig");
         step.addIncludePath("vendor/stb");
         step.linkLibC();
-        step.addCSourceFile("src/stbi.c", &.{"-g"});
+        step.addCSourceFile("src/stbi.c", &.{});
+        step.install();
     }
 
     const run_cmd = exe.run();
@@ -37,5 +37,11 @@ pub fn build(b: *std.build.Builder) void {
     run_step.dependOn(&run_cmd.step);
 
     const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&exe_tests.step);
+    test_step.dependOn(&exe_tests.run().step);
+
+    const format_step = b.step("format", "Format all source files");
+    const zig_fmt = b.addSystemCommand(&.{ "sh", "-c", "zig fmt build.zig src/*.zig" });
+    format_step.dependOn(&zig_fmt.step);
+    const clang_format = b.addSystemCommand(&.{ "sh", "-c", "clang-format -i -style=file src/*.[ch]" });
+    format_step.dependOn(&clang_format.step);
 }
