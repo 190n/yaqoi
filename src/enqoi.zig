@@ -1,6 +1,7 @@
 const clap = @import("clap");
 const std = @import("std");
 const stb_image = @import("./stb_image.zig");
+const QOIEncoder = @import("./qoi_encoder.zig");
 
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
