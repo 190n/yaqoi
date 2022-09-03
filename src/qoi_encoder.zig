@@ -306,6 +306,22 @@ test "ChunkRun" {
     try std.testing.expectEqual([_]u8{(0b11 << 6) | 27}, chunkToBytes(ChunkRun.init(28)));
 }
 
+fn hashPixel(pixel: Pixel) u6 {
+    return @truncate(
+        u6,
+        (3 *% pixel.r) +% (5 *% pixel.g) +% (7 *% pixel.b) +% (11 *% pixel.a),
+    );
+}
+
+test "hashPixel" {
+    try std.testing.expectEqual(@as(u6, 46), hashPixel(Pixel{
+        .r = 85,
+        .g = 134,
+        .b = 173,
+        .a = 2,
+    }));
+}
+
 const end_marker = [1]u8{0} ** 7 ++ [1]u8{1};
 
 stats: Stats = .{},
