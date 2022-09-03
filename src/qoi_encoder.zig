@@ -332,18 +332,32 @@ test "ChunkRun" {
 
 pub const end_marker = [1]u8{0} ** 7 ++ [1]u8{1};
 
+pub const Config = struct {
+    width: u32,
+    height: u32,
+    channels: Channels,
+    colorspace: Colorspace,
+};
+
 stats: Stats = .{},
 track_stats: bool,
-config: Reverse(Header),
+config: Config,
+header: Reverse(Header),
 // optionals so that we don't rely on state from another region
 seen_pixels: [64]?Pixel = [_]?Pixel{null} ** 64,
 last_pixel: ?Pixel = null,
 run_length: u6 = 0,
 
-pub fn init(track_stats: bool, config: Reverse(Header)) QoiEncoder {
+pub fn init(track_stats: bool, config: Config) QoiEncoder {
     return QoiEncoder{
         .track_stats = track_stats,
         .config = config,
+        .header = Header.init(
+            config.width,
+            config.height,
+            config.channels,
+            config.colorspace,
+        ),
     };
 }
 

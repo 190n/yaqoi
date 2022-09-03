@@ -72,25 +72,25 @@ pub fn main() !void {
         std.os.exit(1);
     }
 
-    const header = QoiEncoder.Header.init(
-        std.math.cast(u32, result.ok.x) orelse {
+    const config = QoiEncoder.Config{
+        .width = std.math.cast(u32, result.ok.x) orelse {
             std.log.err("image dimensions too large", .{});
             std.os.exit(1);
         },
-        std.math.cast(u32, result.ok.y) orelse {
+        .height = std.math.cast(u32, result.ok.y) orelse {
             std.log.err("image dimensions too large", .{});
             std.os.exit(1);
         },
-        switch (result.ok.channels_in_file) {
+        .channels = switch (result.ok.channels_in_file) {
             .grey, .rgb => .rgb,
             .grey_alpha, .rgba => .rgba,
         },
-        if (linear_srgb) .srgb_linear else .srgb_gamma,
-    );
-    try output.writeAll(&QoiEncoder.chunkToBytes(header));
+        .colorspace = if (linear_srgb) .srgb_linear else .srgb_gamma,
+    };
+    var encoder = QoiEncoder.init(verbose, config);
+    try output.writeAll(&QoiEncoder.chunkToBytes(encoder.header));
 
     const pixels = @ptrCast([*]QoiEncoder.Pixel, result.ok.data.ptr)[0..(result.ok.x * result.ok.y)];
-    var encoder = QoiEncoder.init(false, header);
     for (pixels) |p| {
         try encoder.addPixel(output.writer(), p);
     }
