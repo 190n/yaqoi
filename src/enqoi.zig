@@ -1,7 +1,7 @@
 const clap = @import("clap");
 const std = @import("std");
 const stb_image = @import("./stb_image.zig");
-const QOIEncoder = @import("./qoi_encoder.zig");
+const QoiEncoder = @import("./qoi_encoder.zig");
 
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -55,19 +55,12 @@ pub fn main() !void {
     const linear_srgb = res.args.@"linear-srgb";
     const verbose = res.args.verbose;
     const threads = res.args.threads orelse 1;
-    _ = linear_srgb;
     _ = verbose;
     _ = threads;
 
-    var result = stb_image.load(&input, null);
+    var result = stb_image.load(&input, .rgba);
     defer result.deinit();
-    if (result == .ok) {
-        std.log.info("{}x{}, {} channels", .{
-            result.ok.x,
-            result.ok.y,
-            @enumToInt(result.ok.channels),
-        });
-    } else {
+    if (result == .err) {
         const quote = if (res.args.input) |_| "'" else "";
         const filename = res.args.input orelse "[stdin]";
         std.log.err("reading input {s}{s}{s}: {s}", .{
@@ -76,10 +69,36 @@ pub fn main() !void {
             quote,
             result.err,
         });
+        std.os.exit(1);
     }
+
+    const header = QoiEncoder.Header.init(
+        std.math.cast(u32, result.ok.x) orelse {
+            std.log.err("image dimensions too large", .{});
+            std.os.exit(1);
+        },
+        std.math.cast(u32, result.ok.y) orelse {
+            std.log.err("image dimensions too large", .{});
+            std.os.exit(1);
+        },
+        switch (result.ok.channels_in_file) {
+            .grey, .rgb => .rgb,
+            .grey_alpha, .rgba => .rgba,
+        },
+        if (linear_srgb) .srgb_linear else .srgb_gamma,
+    );
+    try output.writeAll(&QoiEncoder.chunkToBytes(header));
+
+    const pixels = @ptrCast([*]QoiEncoder.Pixel, result.ok.data.ptr)[0..(result.ok.x * result.ok.y)];
+    var encoder = QoiEncoder.init(false, header);
+    for (pixels) |p| {
+        try encoder.addPixel(output.writer(), p);
+    }
+    try encoder.finish(output.writer());
+    try output.writeAll(&QoiEncoder.end_marker);
 }
 
 test {
     std.testing.refAllDecls(@This());
-    std.testing.refAllDecls(QOIEncoder);
+    std.testing.refAllDecls(QoiEncoder);
 }

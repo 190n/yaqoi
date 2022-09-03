@@ -6,14 +6,38 @@ pub const Channels = enum(u8) { rgb = 3, rgba = 4 };
 
 pub const Colorspace = enum(u8) { srgb_gamma = 0, srgb_linear = 1 };
 
-pub const Pixel = extern struct { r: u8, g: u8, b: u8, a: u8 };
+pub const Pixel = extern struct {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
 
-pub const Config = struct {
-    width: u32,
-    height: u32,
-    channels: Channels,
-    colorspace: Colorspace,
+    pub fn hash(self: Pixel) u6 {
+        return @truncate(
+            u6,
+            (3 *% self.r) +% (5 *% self.g) +% (7 *% self.b) +% (11 *% self.a),
+        );
+    }
+
+    pub fn eql(self: Pixel, other: Pixel) bool {
+        return self.r == other.r and self.g == other.g and self.b == other.b and self.a == other.a;
+    }
 };
+
+test "Pixel.hash" {
+    try std.testing.expectEqual(@as(u6, 46), (Pixel{
+        .r = 85,
+        .g = 134,
+        .b = 173,
+        .a = 2,
+    }).hash());
+}
+
+test "Pixel.eql" {
+    try std.testing.expect((Pixel{ .r = 5, .g = 6, .b = 7, .a = 8 }).eql(Pixel{ .r = 5, .g = 6, .b = 7, .a = 8 }));
+
+    try std.testing.expect(!(Pixel{ .r = 5, .g = 6, .b = 7, .a = 9 }).eql(Pixel{ .r = 5, .g = 6, .b = 7, .a = 8 }));
+}
 
 /// generate a struct identical to T except with all fields in reverse order
 fn Reverse(comptime T: type) type {
@@ -56,7 +80,7 @@ pub fn chunkToBytes(chunk: anytype) [@bitSizeOf(@TypeOf(chunk)) / 8]u8 {
     return @bitCast([@bitSizeOf(T) / 8]u8, big_endian);
 }
 
-const Header = packed struct {
+pub const Header = packed struct {
     magic0: u8 = 'q',
     magic1: u8 = 'o',
     magic2: u8 = 'i',
@@ -306,34 +330,78 @@ test "ChunkRun" {
     try std.testing.expectEqual([_]u8{(0b11 << 6) | 27}, chunkToBytes(ChunkRun.init(28)));
 }
 
-fn hashPixel(pixel: Pixel) u6 {
-    return @truncate(
-        u6,
-        (3 *% pixel.r) +% (5 *% pixel.g) +% (7 *% pixel.b) +% (11 *% pixel.a),
-    );
-}
-
-test "hashPixel" {
-    try std.testing.expectEqual(@as(u6, 46), hashPixel(Pixel{
-        .r = 85,
-        .g = 134,
-        .b = 173,
-        .a = 2,
-    }));
-}
-
-const end_marker = [1]u8{0} ** 7 ++ [1]u8{1};
+pub const end_marker = [1]u8{0} ** 7 ++ [1]u8{1};
 
 stats: Stats = .{},
 track_stats: bool,
-config: Config,
-seen_pixels: [64]Pixel = std.mem.zeroes([64]Pixel),
-last_pixel: Pixel = .{ .r = 0, .g = 0, .b = 0, .a = 255 },
-run_length: u8 = 0,
+config: Reverse(Header),
+// optionals so that we don't rely on state from another region
+seen_pixels: [64]?Pixel = [_]?Pixel{null} ** 64,
+last_pixel: ?Pixel = null,
+run_length: u6 = 0,
 
-pub fn init(track_stats: bool, config: Config) QoiEncoder {
+pub fn init(track_stats: bool, config: Reverse(Header)) QoiEncoder {
     return QoiEncoder{
         .track_stats = track_stats,
         .config = config,
     };
+}
+
+/// encode one pixel and possibly write it out (depending on how it will be encoded)
+pub fn addPixel(self: *QoiEncoder, writer: anytype, pixel: Pixel) !void {
+    defer self.last_pixel = pixel;
+    if (self.last_pixel != null and pixel.eql(self.last_pixel.?)) {
+        // start or continue a run
+        self.run_length += 1;
+        if (self.run_length == 62) {
+            // run cannot grow longer so write it out
+            try writer.writeAll(&chunkToBytes(ChunkRun.init(self.run_length)));
+            self.run_length = 0;
+        }
+        // pixel is encoded
+        return;
+    } else if (self.run_length > 0) {
+        // end the run that was going
+        try writer.writeAll(&chunkToBytes(ChunkRun.init(self.run_length)));
+        self.run_length = 0;
+        // but the pixel is not yet encoded
+    }
+
+    const hash = pixel.hash();
+    if (self.seen_pixels[hash] != null and pixel.eql(self.seen_pixels[hash].?)) {
+        // use this index
+        try writer.writeAll(&chunkToBytes(ChunkIndex.init(hash)));
+        return;
+    } else {
+        self.seen_pixels[hash] = pixel;
+    }
+
+    if (self.last_pixel) |last| {
+        const diff = PixelDifference.init(last, pixel);
+        // try diff and luma chunks
+        if (ChunkDiff.init(diff)) |chunk| {
+            try writer.writeAll(&chunkToBytes(chunk));
+            return;
+        } else if (ChunkLuma.init(diff)) |chunk| {
+            try writer.writeAll(&chunkToBytes(chunk));
+            return;
+        }
+    }
+
+    // if we don't know the last pixel or couldn't encode the difference efficiently, fallback to
+    // rgb/rgba
+    if ((self.last_pixel != null and self.last_pixel.?.a == pixel.a) or self.config.channels == .rgb) {
+        try writer.writeAll(&chunkToBytes(ChunkRgb.init(pixel)));
+        return;
+    } else {
+        try writer.writeAll(&chunkToBytes(ChunkRgba.init(pixel)));
+    }
+}
+
+/// write any pixels that haven't been written (due to an unfinished run or something)
+pub fn finish(self: *QoiEncoder, writer: anytype) !void {
+    if (self.run_length > 0) {
+        try writer.writeAll(&chunkToBytes(ChunkRun.init(self.run_length)));
+        self.run_length = 0;
+    }
 }
