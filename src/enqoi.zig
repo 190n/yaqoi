@@ -3,6 +3,14 @@ const std = @import("std");
 const stb_image = @import("./stb_image.zig");
 const QoiEncoder = @import("./qoi_encoder.zig");
 
+const VerboseReport = struct {
+    pixels: u64,
+    bits: usize,
+    bpp: f64,
+    seconds: f64,
+    mpix_per_sec: f64,
+};
+
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -88,14 +96,20 @@ pub fn main() !void {
         .colorspace = if (linear_srgb) .srgb_linear else .srgb_gamma,
     };
     var encoder = QoiEncoder.init(verbose, config);
-    try output.writeAll(&QoiEncoder.chunkToBytes(encoder.header));
+    var buffered_output = std.io.bufferedWriter(output.writer());
+    try buffered_output.writer().writeAll(&QoiEncoder.chunkToBytes(encoder.header));
 
     const pixels = @ptrCast([*]QoiEncoder.Pixel, result.ok.data.ptr)[0..(result.ok.x * result.ok.y)];
     for (pixels) |p| {
-        try encoder.addPixel(output.writer(), p);
+        try encoder.addPixel(buffered_output.writer(), p);
     }
     try encoder.finish(output.writer());
-    try output.writeAll(&QoiEncoder.end_marker);
+    try buffered_output.writer().writeAll(&QoiEncoder.end_marker);
+    try buffered_output.flush();
+
+    if (verbose) {
+        try std.json.stringify(encoder.stats, .{}, std.io.getStdErr().writer());
+    }
 }
 
 test {
