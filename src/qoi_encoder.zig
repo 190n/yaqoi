@@ -361,22 +361,40 @@ pub fn init(track_stats: bool, config: Config) QoiEncoder {
     };
 }
 
+fn writeChunk(self: *QoiEncoder, writer: anytype, chunk: anytype) !void {
+    if (self.track_stats) {
+        self.stats.total_bits += @bitSizeOf(@TypeOf(chunk));
+        switch (@TypeOf(chunk)) {
+            Reverse(ChunkRgb) => self.stats.pixels_per_op.rgb += 1,
+            Reverse(ChunkRgba) => self.stats.pixels_per_op.rgba += 1,
+            Reverse(ChunkIndex) => self.stats.pixels_per_op.index += 1,
+            Reverse(ChunkDiff) => self.stats.pixels_per_op.diff += 1,
+            Reverse(ChunkLuma) => self.stats.pixels_per_op.luma += 1,
+            Reverse(ChunkRun) => self.stats.pixels_per_op.run += self.run_length,
+            else => @compileError("bad type passed to writeChunk: " ++ @typeName(@TypeOf(chunk))),
+        }
+    }
+
+    try writer.writeAll(&chunkToBytes(chunk));
+}
+
 /// encode one pixel and possibly write it out (depending on how it will be encoded)
 pub fn addPixel(self: *QoiEncoder, writer: anytype, pixel: Pixel) !void {
+    self.stats.total_pixels += 1;
     defer self.last_pixel = pixel;
     if (self.last_pixel != null and pixel.eql(self.last_pixel.?)) {
         // start or continue a run
         self.run_length += 1;
         if (self.run_length == 62) {
             // run cannot grow longer so write it out
-            try writer.writeAll(&chunkToBytes(ChunkRun.init(self.run_length)));
+            try self.writeChunk(writer, ChunkRun.init(self.run_length));
             self.run_length = 0;
         }
         // pixel is encoded
         return;
     } else if (self.run_length > 0) {
         // end the run that was going
-        try writer.writeAll(&chunkToBytes(ChunkRun.init(self.run_length)));
+        try self.writeChunk(writer, ChunkRun.init(self.run_length));
         self.run_length = 0;
         // but the pixel is not yet encoded
     }
@@ -384,7 +402,7 @@ pub fn addPixel(self: *QoiEncoder, writer: anytype, pixel: Pixel) !void {
     const hash = pixel.hash();
     if (self.seen_pixels[hash] != null and pixel.eql(self.seen_pixels[hash].?)) {
         // use this index
-        try writer.writeAll(&chunkToBytes(ChunkIndex.init(hash)));
+        try self.writeChunk(writer, ChunkIndex.init(hash));
         return;
     } else {
         self.seen_pixels[hash] = pixel;
@@ -394,10 +412,10 @@ pub fn addPixel(self: *QoiEncoder, writer: anytype, pixel: Pixel) !void {
         const diff = PixelDifference.init(last, pixel);
         // try diff and luma chunks
         if (ChunkDiff.init(diff)) |chunk| {
-            try writer.writeAll(&chunkToBytes(chunk));
+            try self.writeChunk(writer, chunk);
             return;
         } else if (ChunkLuma.init(diff)) |chunk| {
-            try writer.writeAll(&chunkToBytes(chunk));
+            try self.writeChunk(writer, chunk);
             return;
         }
     }
@@ -405,17 +423,17 @@ pub fn addPixel(self: *QoiEncoder, writer: anytype, pixel: Pixel) !void {
     // if we don't know the last pixel or couldn't encode the difference efficiently, fallback to
     // rgb/rgba
     if ((self.last_pixel != null and self.last_pixel.?.a == pixel.a) or self.config.channels == .rgb) {
-        try writer.writeAll(&chunkToBytes(ChunkRgb.init(pixel)));
+        try self.writeChunk(writer, ChunkRgb.init(pixel));
         return;
     } else {
-        try writer.writeAll(&chunkToBytes(ChunkRgba.init(pixel)));
+        try self.writeChunk(writer, ChunkRgba.init(pixel));
     }
 }
 
 /// write any pixels that haven't been written (due to an unfinished run or something)
 pub fn finish(self: *QoiEncoder, writer: anytype) !void {
     if (self.run_length > 0) {
-        try writer.writeAll(&chunkToBytes(ChunkRun.init(self.run_length)));
+        try self.writeChunk(writer, ChunkRun.init(self.run_length));
         self.run_length = 0;
     }
 }
