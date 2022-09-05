@@ -1,5 +1,4 @@
 .vscode
-*.png
 *.qoi
 zig-out
 zig-cache
