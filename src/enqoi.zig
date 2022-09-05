@@ -2,14 +2,33 @@ const clap = @import("clap");
 const std = @import("std");
 const stb_image = @import("./stb_image.zig");
 const QoiEncoder = @import("./qoi_encoder.zig");
+const Stats = @import("./stats.zig");
 
-const VerboseReport = struct {
-    pixels: u64,
-    bits: usize,
-    bpp: f64,
-    seconds: f64,
-    mpix_per_sec: f64,
+const EncoderThread = struct {
+    thread: std.Thread,
+    encoder: QoiEncoder,
+    pixels: []const QoiEncoder.Pixel,
+    bytes: std.ArrayList(u8),
+
+    pub fn run(self: *EncoderThread) !void {
+        var buf = std.io.bufferedWriter(self.bytes.writer());
+        for (self.pixels) |p| {
+            try self.encoder.addPixel(buf.writer(), p);
+        }
+        try self.encoder.finish(buf.writer());
+        try buf.flush();
+    }
 };
+
+fn addStructs(comptime T: type, dst: *T, src: T) void {
+    inline for (@typeInfo(T).Struct.fields) |f| {
+        switch (@typeInfo(f.field_type)) {
+            .Int, .Float => @field(dst, f.name) += @field(src, f.name),
+            .Struct => addStructs(f.field_type, &@field(dst, f.name), @field(src, f.name)),
+            else => @compileError("bad field type passed to addStructs: " ++ @typeName(f.field_type)),
+        }
+    }
+}
 
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -62,9 +81,7 @@ pub fn main() !void {
 
     const linear_srgb = res.args.@"linear-srgb";
     const verbose = res.args.verbose;
-    const threads = res.args.threads orelse 1;
-    _ = verbose;
-    _ = threads;
+    const num_threads = res.args.threads orelse 1;
 
     var result = stb_image.load(&input, .rgba);
     defer result.deinit();
@@ -95,20 +112,51 @@ pub fn main() !void {
         },
         .colorspace = if (linear_srgb) .srgb_linear else .srgb_gamma,
     };
-    var encoder = QoiEncoder.init(verbose, config);
-    var buffered_output = std.io.bufferedWriter(output.writer());
-    try buffered_output.writer().writeAll(&QoiEncoder.chunkToBytes(encoder.header));
 
-    const pixels = @ptrCast([*]QoiEncoder.Pixel, result.ok.data.ptr)[0..(result.ok.x * result.ok.y)];
-    for (pixels) |p| {
-        try encoder.addPixel(buffered_output.writer(), p);
+    const pixels = @ptrCast([*]const QoiEncoder.Pixel, result.ok.data.ptr)[0..(result.ok.x * result.ok.y)];
+
+    const threads = try ally.alloc(EncoderThread, num_threads);
+    defer ally.free(threads);
+
+    var timer = try std.time.Timer.start();
+
+    for (threads) |*t, i| {
+        const start = pixels.len * i / num_threads;
+        const end = pixels.len * (i + 1) / num_threads;
+        t.* = .{
+            .thread = undefined,
+            .encoder = QoiEncoder.init(verbose, config),
+            .pixels = pixels[start..end],
+            .bytes = std.ArrayList(u8).init(ally),
+        };
+        t.thread = try std.Thread.spawn(.{}, EncoderThread.run, .{t});
     }
-    try encoder.finish(output.writer());
-    try buffered_output.writer().writeAll(&QoiEncoder.end_marker);
-    try buffered_output.flush();
+
+    // finish encoding
+    for (threads) |*t| {
+        t.thread.join();
+    }
+
+    const elapsed_ns = timer.read();
+
+    // write every section of the image
+    try output.writeAll(&QoiEncoder.chunkToBytes(threads[0].encoder.header));
+    for (threads) |t| {
+        try output.writeAll(t.bytes.items);
+    }
+    try output.writeAll(&QoiEncoder.end_marker);
 
     if (verbose) {
-        try std.json.stringify(encoder.stats, .{}, std.io.getStdErr().writer());
+        var sum = Stats{};
+        for (threads) |t| {
+            addStructs(Stats, &sum, t.encoder.stats);
+        }
+        try std.json.stringify(.{
+            .ns = elapsed_ns,
+            .mpix_per_s = @intToFloat(f64, sum.total_pixels) / @intToFloat(f64, elapsed_ns) * 1000,
+            .bpp = @intToFloat(f64, sum.total_bits) / @intToFloat(f64, sum.total_pixels),
+            .encoding = sum,
+        }, .{ .whitespace = .{} }, std.io.getStdErr().writer());
     }
 }
 
