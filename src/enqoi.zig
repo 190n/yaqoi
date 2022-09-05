@@ -11,6 +11,8 @@ const EncoderThread = struct {
     bytes: std.ArrayList(u8),
 
     pub fn run(self: *EncoderThread) !void {
+        // 5 = worst case where every pixel gets an RGBA chunk
+        try self.bytes.ensureTotalCapacity(5 * self.pixels.len);
         var buf = std.io.bufferedWriter(self.bytes.writer());
         for (self.pixels) |p| {
             try self.encoder.addPixel(buf.writer(), p);
