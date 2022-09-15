@@ -10,7 +10,7 @@ const pad_amount = std.mem.alignForward(@sizeOf(usize), max_align);
 /// if you set this, only do so once and before you call any stb_image functions.
 pub var allocator = std.heap.c_allocator;
 
-export fn stbiMalloc(size: usize) callconv(.C) ?[*]align(max_align) u8 {
+export fn stbiMalloc(size: usize) ?[*]align(max_align) u8 {
     const slice = allocator.alignedAlloc(u8, max_align, pad_amount + size) catch return null;
     // store the size before the data
     @ptrCast(*usize, slice.ptr).* = size;
@@ -18,11 +18,12 @@ export fn stbiMalloc(size: usize) callconv(.C) ?[*]align(max_align) u8 {
 }
 
 export fn stbiRealloc(maybe_ptr: ?[*]align(max_align) u8, new_size: usize) ?[*]align(max_align) u8 {
-    // realloc will take the alignment from the type of the old slice
     if (maybe_ptr) |ptr| {
         const orig_ptr = ptr - pad_amount;
         const orig_size = @ptrCast(*const usize, orig_ptr).*;
         const orig_slice = orig_ptr[0..(pad_amount + orig_size)];
+        // realloc will take the alignment from the type of the old slice which is why we don't have
+        // "aligned realloc" here or anything
         const new_slice = allocator.realloc(orig_slice, pad_amount + new_size) catch return null;
         @ptrCast(*usize, new_slice.ptr).* = new_size;
         return new_slice.ptr + pad_amount;
@@ -58,8 +59,8 @@ pub const STBImageResult = union(enum) {
     pub fn deinit(self: *STBImageResult) void {
         if (self.* == .ok) {
             stb_image.stbi_image_free(self.ok.data.ptr);
-            self.ok.data.len = 0;
         }
+        self.* = undefined;
     }
 };
 
